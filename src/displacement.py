@@ -1,6 +1,6 @@
 import street_graphs
 import main_graph
-import dijkstra_algorithm
+import algoritmo_dijkstra
 
 class Adress:
 
@@ -273,7 +273,7 @@ class Adress:
         distance_list = []
         for x in self._nodes:
             distance_list.append\
-                (dijkstra_algorithm.dijkstra_path(self._sub_graph, self._position, x))
+                (algoritmo_dijkstra.dijkstra_path(self._sub_graph, self._position, x))
         return distance_list
 
     def intersections_distance(self, other):
@@ -286,7 +286,7 @@ class Adress:
         for x in self._nodes:
             for y in other.nodes:
                 distance_list.append\
-                    (dijkstra_algorithm.dijkstra_path(self._graph, x, y))
+                    (algoritmo_dijkstra.dijkstra_path(self._graph, x, y))
         return distance_list
 
     def travelled_distance(self, other):
@@ -329,7 +329,8 @@ class Adress:
 
     def format_is_valid(self):
         if not None:
-            if len(self._adress) > 6:
+            if len(self._adress) > 6 and len(self._adress) < 10:
+                '''Menor que 10 para contornar valores como 16.251.01A'''
                 if self._adress[2] == '.':
                     return True
         return False
