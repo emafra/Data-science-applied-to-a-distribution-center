@@ -36,7 +36,7 @@ class OPP():
         self._picker = self._table_order.iloc[0]['funcionario']
         self._order_type = 0
         [self._meters, self._address_nfound] = self.meters_traveled()
-        [self._amount_collected, self._start_time,
+        [self._quantity_collected, self._start_time,
          self._final_time] = self.picking_performed()
 
     def not_picking(self):
@@ -99,8 +99,8 @@ class OPP():
         return self._meters
 
     @property
-    def amount_colleted(self):
-        return self._amount_collected
+    def quantity_colleted(self):
+        return self._quantity_collected
 
     @property
     def start_time(self):
@@ -177,7 +177,7 @@ class tables_OPP():
             table2 = self._ZTWM_table[(self._ZTWM_table['ordem'] == x)]
             order = OPP(x, table1, table2)
             new_row = {'ordem': order.key, 'funcionario': order.picker,
-                       'distancia': order.meters, 'Qtd_coletada': order.amount_colleted,
+                       'distancia': order.meters, 'Qtd_coletada': order.quantity_colleted,
                        'inicial': order.start_time, 'final': order.final_time,
                        'type': order.order_type, 'Pos nencontrada': order.address_nfound}
             result_table = result_table.append(new_row, ignore_index=True)
@@ -201,7 +201,7 @@ class tables_OPP():
             table2 = self._ZTWM_table[(self._ZTWM_table['ordem'] == x)]
             order = OPP(x, table1, table2)
             new_row = {'ordem': order.key, 'funcionario': order.picker,
-                       'distancia': order.meters, 'Qtd_coletada': order.amount_colleted,
+                       'distancia': order.meters, 'Qtd_coletada': order.quantity_colleted,
                        'inicial': order.start_time, 'final': order.final_time,
                        'type': order.order_type, 'Pos nencontrada': order.address_nfound}
             result_table = result_table.append(new_row, ignore_index=True)
@@ -237,6 +237,8 @@ class tables_OPP():
 
     def productivity_histogram(self):
         plt.figure()
+        plt.xlabel('Productivity')
+        plt.ylabel('Frequency')
         self._picking_table['produtividade'].plot.hist(bins=100, alpha=1)
         plt.show()
 
@@ -250,9 +252,11 @@ class tables_OPP():
         ax1 = fig.add_subplot(2, 1, 1)
         ax2 = fig.add_subplot(2, 1, 2)
         ax1.hist(self._picking_table['distancia'], bins=100, alpha=1)
-        ax1.set_title("Distância Percorrida")
+        ax1.set_title("Travel distance")
+        ax1.set_ylabel('Frequency')
         ax2.hist(self._picking_table['Qtd_coletada'], bins=100, alpha=1)
-        ax2.set_title("Qtd Coletada")
+        ax2.set_title("Quantity collected")
+        ax2.set_ylabel('Frequency')
         plt.show()
 
     def productivity_employee_plot(self):
@@ -267,7 +271,31 @@ class tables_OPP():
         z = pd.DataFrame({'employee': employee_list,
                           'Productivity': productivity_list, 'number of samples': sample_list})
         z.plot.bar(rot=0, subplots=True, x='employee')
+        plt.xlabel('Employee')
         plt.show()
+
+    def productivity_each_employee(self):
+        employee_list = self._picking_table['funcionario'].unique()
+        for x in employee_list:
+            table = self._picking_table[['produtividade', 'inicial']][self._picking_table['funcionario'] == x]
+            table[['inicial', 'produtividade']].plot.bar(rot=0, x='inicial')
+            plt.title(f'Employee {x}')
+            plt.xlabel('Productivity')
+            plt.ylabel('Order')
+            plt.show()
+
+    def productivity_each_time(self):
+        employee_list = self._picking_table['funcionario'].unique()
+        for x in employee_list:
+            table = self._picking_table[['produtividade', 'inicial']][self._picking_table['funcionario'] == x]
+            time_lst = self._picking_table['inicial'].unique()
+            for y in time_lst:
+                table = self._picking_table[['produtividade', 'inicial']][self._picking_table['inicial'] == y]
+                table[['inicial', 'produtividade']].plot.bar(rot=0, x='inicial')
+                plt.title(f'Employee {x}')
+                plt.xlabel('Productivity')
+                plt.ylabel('Order')
+                plt.show()
 
     def overview_orders(self):
         orders, partial, total, pendencys, orders_pendency, \
@@ -285,8 +313,9 @@ class tables_OPP():
                       'After First Filter': valid, 'N first floor': len(not_floor1),
                       'Adress Not found': len(adress_not_found), 'Zero seconds': len(noise),
                       'Valid Picking': len(valid_picking)}
-        # D = {u'Label1': 26, u'Label2': 17, u'Label3': 30}
         plt.bar(*zip(*order_dict.items()))
+        plt.title(f'Overview CD Joinville')
+        plt.ylabel('Orders Quantity ')
         plt.show()
 
 
@@ -431,6 +460,9 @@ class reference:
 
     def pick_histogram(self):
         plt.figure()
+        plt.title(f'Pick Histogram - Reference')
+        plt.xlabel('Quantity')
+        plt.ylabel('Frequency')
         self._pick_table['rate'].plot.hist(bins=100, alpha=1)
         plt.show()
 
@@ -440,6 +472,9 @@ class reference:
 
     def travel_histogram(self):
         plt.figure()
+        plt.title(f'Travel Histogram - Reference')
+        plt.xlabel('Speed')
+        plt.ylabel('frequency')
         self._travel_table['speed'].plot.hist(bins=100, alpha=1)
         plt.show()
 
@@ -466,25 +501,27 @@ df3 = pd.read_csv('PENDENCIAS.csv', encoding='ISO-8859-1', sep=';').\
     sort_values(by=['Nº da ordem de transporte', 'Data de criação', 'Hora de criação'])
 df3 = format_PENDENCIAS(df3)
 
-picking_order = tables_OPP(df, df2, df3)
+picking_order = tables_OPP(df, df2, df3,0)
+picking_order.productivity_each_employee()
+# print(picking_order.picking_table[['ordem', 'distancia', 'Qtd_coletada', 'seconds']][
+#     picking_order.picking_table['produtividade'] > 10])
+#
 picking_order.variables_histogram()
 picking_order.productivity_employee_plot()
 picking_order.overview_orders()
 
+# picking_order.productivity_each_employee()
 
-# print(picking_order.picking_table['produtividade'].mean())
-# print(len(df['ordem']), df2['ordem'], len(picking_order.LTAP_table['ordem']), len(picking_order.result_table['ordem']),
-#       len(picking_order.picking_table))
-#
-# referencias = reference(picking_order.order_list, df, df2)
-#
-# # print(referencias.travel_table.columns)
-# # print(referencias.travel_table[['chave1', 'chave2', 'inicial', 'final']][(referencias.travel_table['seconds'] < 0)])
-# #
-# a = referencias.travel_table['speed'].mean()
-# b = referencias.pick_table['rate'].mean()
-# # #
-# print(a, b)
-# referencias.travel_histogram()
-# referencias.travel_box_plot()
-# referencias.pick_histogram()
+# print(picking_order.picking_table['produtividade'].mean())#
+referencias = reference(picking_order.order_list, df, df2)
+# print(referencias.travel_table.columns)
+# print(referencias.travel_table[['chave1', 'chave2', 'inicial', 'final']][(referencias.travel_table['seconds'] < 0)])
+a = referencias.pick_table['rate'].mean()
+b = referencias.travel_table['speed'].mean()
+
+print('Taxa de referência:', a, 'Velocidade de referência:', b)
+
+referencias.travel_histogram()
+referencias.travel_box_plot()
+referencias.pick_histogram()
+referencias.pick_box_plot()
